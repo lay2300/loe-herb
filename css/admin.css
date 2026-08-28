@@ -1,0 +1,101 @@
+/* CSS สำหรับระบบ Admin */
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Prompt', sans-serif !important;
+    background-color: #f8fafc;
+}
+
+/* Loei Nature Theme for Sidebar */
+aside.bg-green-900, .admin-sidebar {
+    background: linear-gradient(180deg, #14532d 0%, #064e3b 100%) !important;
+    border-right: none;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+aside.bg-green-900::before, .admin-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url('https://www.transparenttextures.com/patterns/leaf.png');
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+.admin-nav-link {
+    transition: all 0.2s ease;
+    border-radius: 0.75rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    transform: translateX(5px);
+}
+
+/* Custom Scrollbar for Admin */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9; 
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; 
+}
+
+.admin-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+.admin-card:hover { 
+    transform: translateY(-4px); 
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important; 
+}
+
+/* Table Enhancements */
+.table-container {
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+table {
+    border-collapse: separate !important;
+    border-spacing: 0;
+    width: 100%;
+}
+thead th {
+    background-color: #f8fafc;
+    border-bottom: 2px solid #e2e8f0 !important;
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.025em;
+}
+tbody tr:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* Entrance Animations */
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }

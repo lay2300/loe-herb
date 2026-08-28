@@ -1,0 +1,16 @@
+/* CSS สำหรับหน้า contact.php */
+.contact-icon-box {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #16a34a; /* green-600 */
+    padding: 1rem;
+    border-radius: 1rem;
+    margin-right: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+.contact-icon-box:hover { transform: rotate(10deg) scale(1.1); }
+
+.contact-form-container {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-top: 4px solid #22c55e;
+}

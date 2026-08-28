@@ -1,0 +1,14 @@
+/* CSS สำหรับหน้า wisdom_detail.php */
+.article-cover {
+    position: relative;
+    overflow: hidden;
+}
+.article-cover::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70%;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+}

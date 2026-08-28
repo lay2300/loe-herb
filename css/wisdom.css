@@ -1,0 +1,39 @@
+/* CSS สำหรับหน้า wisdom.php */
+.article-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+    background: white;
+}
+.article-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    border-color: #86efac; /* green-300 */
+}
+
+@media (max-width: 767px) {
+    .wisdom-search-box {
+        width: 100%;
+        max-width: 100%;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.5rem;
+        border-radius: 1rem;
+    }
+
+    .wisdom-search-box input,
+    .wisdom-search-box button {
+        width: 100%;
+        min-height: 3rem;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .wisdom-search-box button {
+        justify-content: center;
+    }
+
+    .article-card h2.text-2xl {
+        font-size: 1.35rem !important;
+        line-height: 1.4;
+    }
+}

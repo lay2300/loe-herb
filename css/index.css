@@ -1,0 +1,104 @@
+/* CSS สำหรับหน้า index.php */
+.hero-section {
+    position: relative;
+    background: linear-gradient(-45deg, #064e3b, #047857, #065f46, #059669);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: white;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.hero-bg-image {
+    position: absolute;
+    inset: 0;
+    opacity: 0.25;
+    background-image: url('../uploads/Herb Ingredients.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: blur(3px);
+    transform: scale(1.1);
+}
+
+.search-box {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+.search-box:focus-within { 
+    transform: translateY(-3px) scale(1.01);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2);
+    border-color: #22c55e;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        padding-top: 4rem;
+        padding-bottom: 4rem;
+    }
+
+    .hero-section h1.text-6xl,
+    .hero-section h1.text-3xl {
+        font-size: clamp(2rem, 9vw, 3rem) !important;
+        line-height: 1.2;
+    }
+
+    .hero-section p.text-xl,
+    .hero-section p.text-lg {
+        margin-bottom: 2rem;
+    }
+
+    .search-box {
+        width: 100%;
+        max-width: 100%;
+        flex-direction: column;
+        gap: 0.125rem;
+        padding: 0.375rem;
+        border-radius: 0.75rem;
+    }
+
+    .search-box input,
+    .search-box button {
+        width: 100%;
+        min-height: 2.625rem;
+        border-radius: 0.5rem !important;
+        padding: 0.625rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        line-height: 1.25;
+    }
+
+    .search-box button {
+        justify-content: center;
+        gap: 0.25rem;
+    }
+
+    .search-box button svg {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.25rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    .search-box {
+        border-radius: 0.75rem;
+    }
+
+    .search-box input {
+        border-radius: 0.5rem 0 0 0.5rem !important;
+    }
+
+    .search-box button {
+        border-radius: 0 0.5rem 0.5rem 0 !important;
+    }
+}

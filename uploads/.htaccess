@@ -1,0 +1,19 @@
+# ปิดการรันสคริปต์ PHP ในโฟลเดอร์นี้
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+# บล็อกการเข้าถึงไฟล์ที่มีนามสกุลอันตราย (ป้องกันการเข้าถึงไฟล์สคริปต์โดยตรง)
+<FilesMatch "(?i)\.(php|php3|php4|php5|php7|php8|phtml|pl|py|jsp|asp|htm|html|shtml|sh|cgi|exe)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ปิดการรันโปรแกรม CGI
+Options -ExecCGI

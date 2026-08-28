@@ -1,0 +1,15 @@
+# Runtime logs
+logs/*.log
+
+# User-uploaded files
+uploads/*
+!uploads/.htaccess
+!uploads/Herb Ingredients.jpg
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Local OAuth credentials
+config/oauth.local.php
