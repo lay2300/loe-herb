@@ -3,4 +3,5 @@
 .env
 .env.*
 config/oauth.local.php
+*.pem
 logs/*.log
