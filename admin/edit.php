@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once '../config/security.php';
+start_secure_session();
 // ตรวจสอบว่า Login หรือยัง
 if (!isset($_SESSION['admin_login'])) {
     header("Location: login.php");
@@ -36,8 +37,10 @@ try {
 
 // 3. ตรวจสอบการกดปุ่มบันทึกแก้ไข
 if (isset($_POST['submit'])) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        die('คำขอไม่ถูกต้อง กรุณากลับไปลองใหม่อีกครั้ง');
+    }
     $thai_name = $_POST['thai_name'];
-    $local_name = $_POST['local_name'];
     $sub_district = $_POST['sub_district'];
     $sci_name = $_POST['sci_name'];
     $family_name = $_POST['family_name'];
@@ -72,7 +75,6 @@ if (isset($_POST['submit'])) {
     try {
         $sql = "UPDATE herbs SET 
                 thai_name = :thai_name, 
-                local_name = :local_name, 
                 sci_name = :sci_name, 
                 family_name = :family_name,
                 category = :category,
@@ -91,7 +93,6 @@ if (isset($_POST['submit'])) {
         $stmt = $conn->prepare($sql);
         $stmt->execute([
             'thai_name' => $thai_name,
-            'local_name' => $local_name,
             'sci_name' => $sci_name,
             'family_name' => $family_name,
             'category' => $category,
@@ -172,6 +173,7 @@ if (isset($_POST['submit'])) {
         </div>
 
         <form action="" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="<?php echo e(csrf_token()); ?>">
             
             <div>
                 <label class="block text-sm font-medium text-gray-700">ชื่อภาษาไทย <span class="text-red-500">*</span></label>
@@ -179,10 +181,6 @@ if (isset($_POST['submit'])) {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">ชื่อท้องถิ่น</label>
-                    <input type="text" name="local_name" value="<?php echo htmlspecialchars($herb['local_name']); ?>" class="mt-1 w-full p-2.5 border rounded-lg focus:ring-blue-500">
-                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">ชื่อวิทยาศาสตร์</label>
                     <input type="text" name="sci_name" value="<?php echo htmlspecialchars($herb['sci_name']); ?>" class="mt-1 w-full p-2.5 border rounded-lg italic focus:ring-blue-500">

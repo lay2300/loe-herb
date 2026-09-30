@@ -1,9 +1,13 @@
 <?php
-session_start();
+require_once '../config/security.php';
+start_secure_session();
 if (!isset($_SESSION['admin_login'])) { header("Location: login.php"); exit(); }
 require_once '../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        die('คำขอไม่ถูกต้อง กรุณากลับไปลองใหม่อีกครั้ง');
+    }
     $title = $_POST['title'];
     $content = $_POST['content'];
     $author = $_POST['author'];
@@ -65,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
 
             <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="<?php echo e(csrf_token()); ?>">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">หัวข้อบทความ</label>
                     <input type="text" name="title" required class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 outline-none">

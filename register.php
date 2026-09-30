@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'config/security.php';
+start_secure_session();
 if (isset($_SESSION['user_login'])) {
     header("Location: index.php");
     exit();
@@ -78,15 +79,22 @@ $error = '';
 $success = '';
 
 if (isset($_POST['register'])) {
-    $username = trim($_POST['username']);
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $error = 'คำขอไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
+    }
+    $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
-    if (!isset($_POST['agree_privacy'])) {
+    if ($error) {
+        // หยุดการประมวลผลเมื่อ CSRF token ไม่ถูกต้อง
+    } elseif (!isset($_POST['agree_privacy'])) {
         $error = "กรุณายอมรับนโยบายความเป็นส่วนตัวก่อนสมัครสมาชิกค่ะ";
-    } else if (strlen($password) < 6) {
-        $error = "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรค่ะ";
+    } else if (strlen($password) < 12) {
+        $error = "รหัสผ่านต้องมีความยาวอย่างน้อย 12 ตัวอักษรค่ะ";
+    } else if (!preg_match('/[A-Za-z]/', $password) || !preg_match('/[^A-Za-z0-9\s]/', $password)) {
+        $error = "รหัสผ่านต้องมีตัวอักษรภาษาอังกฤษอย่างน้อย 1 ตัว และอักขระพิเศษอย่างน้อย 1 ตัวค่ะ";
     } else if ($password !== $confirm_password) {
         $error = "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกันค่ะ";
     } else {
@@ -150,6 +158,7 @@ if (isset($_POST['register'])) {
             </div>
         <?php else: ?>
             <form id="register-form" action="" method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="<?php echo e(csrf_token()); ?>">
                 <div>
                     <input type="text" name="username" required placeholder="ชื่อผู้ใช้งาน (Username)" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition bg-gray-50 focus:bg-white">
                 </div>
@@ -157,10 +166,11 @@ if (isset($_POST['register'])) {
                     <input type="email" name="email" required placeholder="อีเมล (Email)" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition bg-gray-50 focus:bg-white">
                 </div>
                 <div>
-                    <input type="password" name="password" required minlength="6" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition bg-gray-50 focus:bg-white">
+                    <input type="password" name="password" required minlength="12" pattern="(?=.*[A-Za-z])(?=.*[^A-Za-z0-9\s]).{12,}" title="ต้องมีอย่างน้อย 12 ตัวอักษร ประกอบด้วยอักษรภาษาอังกฤษและอักขระพิเศษ" placeholder="รหัสผ่าน (12 ตัวขึ้นไป มีอักษรและอักขระพิเศษ)" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition bg-gray-50 focus:bg-white">
+                    <p class="mt-1 text-xs text-gray-500">อย่างน้อย 12 ตัวอักษร มีอักษรภาษาอังกฤษและอักขระพิเศษ เช่น ! @ # $</p>
                 </div>
                 <div>
-                    <input type="password" name="confirm_password" required minlength="6" placeholder="ยืนยันรหัสผ่านอีกครั้ง" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition bg-gray-50 focus:bg-white">
+                    <input type="password" name="confirm_password" required minlength="12" placeholder="ยืนยันรหัสผ่านอีกครั้ง" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition bg-gray-50 focus:bg-white">
                 </div>
                 <div class="flex items-center">
                     <input id="agree_privacy" name="agree_privacy" type="checkbox" required class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">

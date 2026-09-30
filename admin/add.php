@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once '../config/security.php';
+start_secure_session();
 // ตรวจสอบว่า Login หรือยัง
 if (!isset($_SESSION['admin_login'])) {
     header("Location: login.php");
@@ -12,8 +13,10 @@ require_once '../config/thai_geography.php'; // ดึงข้อมูลอ�
 
 // 2. ตรวจสอบว่ามีการกดปุ่ม "บันทึก" หรือยัง
 if (isset($_POST['submit'])) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        die('คำขอไม่ถูกต้อง กรุณากลับไปลองใหม่อีกครั้ง');
+    }
     $thai_name = $_POST['thai_name'];
-    $local_name = $_POST['local_name'];
     $sub_district = $_POST['sub_district'];
     $sci_name = $_POST['sci_name'];
     $family_name = $_POST['family_name'];
@@ -56,13 +59,12 @@ if (isset($_POST['submit'])) {
     if (move_uploaded_file($tmp_name, $upload_dir . $new_image_name)) {
         try {
             // 3. เตรียมคำสั่ง SQL สำหรับเพิ่มข้อมูล
-            $sql = "INSERT INTO herbs (thai_name, local_name, sci_name, family_name, category, other_names, general_characteristics, properties, parts_used, culinary_uses, additional_info, location_found, sub_district, coordinates, image_path) 
-                    VALUES (:thai_name, :local_name, :sci_name, :family_name, :category, :other_names, :general_characteristics, :properties, :parts_used, :culinary_uses, :additional_info, :location_found, :sub_district, :coordinates, :image_path)";
+                $sql = "INSERT INTO herbs (thai_name, sci_name, family_name, category, other_names, general_characteristics, properties, parts_used, culinary_uses, additional_info, location_found, sub_district, coordinates, image_path)
+                    VALUES (:thai_name, :sci_name, :family_name, :category, :other_names, :general_characteristics, :properties, :parts_used, :culinary_uses, :additional_info, :location_found, :sub_district, :coordinates, :image_path)";
             
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 'thai_name' => $thai_name,
-                'local_name' => $local_name,
                 'sci_name' => $sci_name,
                 'family_name' => $family_name,
                 'category' => $category,
@@ -137,6 +139,26 @@ if (isset($_POST['submit'])) {
         </div>
 
         <form action="add.php" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="<?php echo e(csrf_token()); ?>">
+
+            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <label for="word-import" class="block text-sm font-semibold text-gray-800">นำเข้าข้อมูลจาก Word (.docx)</label>
+                <input id="word-import" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="mt-2 block w-full text-sm text-gray-700">
+                <p class="mt-1 text-xs text-gray-600">นำเข้าสมุนไพรได้หลายรายการในไฟล์เดียว โดยเริ่มรายการใหม่เมื่อพบฟิลด์ “ชื่อวิทยาศาสตร์” ซ้ำ ข้อมูลจะแสดงแยกเป็นรายการให้ตรวจทานก่อนบันทึก</p>
+                <p id="word-import-status" class="mt-2 text-sm" role="status" aria-live="polite"></p>
+            </div>
+
+            <section id="batch-preview" class="hidden space-y-4" aria-live="polite">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                    <h3 id="batch-preview-title" class="text-lg font-bold text-gray-800"></h3>
+                    <button id="batch-cancel" type="button" class="text-sm text-gray-600 underline">ยกเลิกการนำเข้า</button>
+                </div>
+                <div id="batch-record-list" class="space-y-4"></div>
+                <p id="batch-save-status" class="text-sm" role="status" aria-live="polite"></p>
+                <button id="batch-save" type="button" class="w-full rounded-lg bg-green-700 px-4 py-3 font-bold text-white hover:bg-green-800">บันทึกสมุนไพรทั้งหมด</button>
+            </section>
+
+            <div id="single-herb-fields" class="space-y-4">
             
             <div>
                 <label class="block text-sm font-medium text-gray-700">ชื่อภาษาไทย <span class="text-red-500">*</span></label>
@@ -144,10 +166,6 @@ if (isset($_POST['submit'])) {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">ชื่อท้องถิ่น (จังหวัดเลย)</label>
-                    <input type="text" name="local_name" class="mt-1 w-full p-2.5 border rounded-lg focus:ring-green-500">
-                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">ชื่อวิทยาศาสตร์</label>
                     <input type="text" name="sci_name" class="mt-1 w-full p-2.5 border rounded-lg italic focus:ring-green-500">
@@ -275,10 +293,12 @@ if (isset($_POST['submit'])) {
                     💾 บันทึกข้อมูลสมุนไพร
                 </button>
             </div>
+            </div>
 
         </form>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
     <script>
         function setupDragDrop(dropzoneId, inputId, previewId, placeholderId, isMultiple) {
             const dropzone = document.getElementById(dropzoneId);
@@ -373,6 +393,437 @@ if (isset($_POST['submit'])) {
 
         districtSelect.addEventListener('change', function() {
             updateSubdistricts(this.value);
+        });
+
+        const wordImportInput = document.getElementById('word-import');
+        const wordImportStatus = document.getElementById('word-import-status');
+        const wordFieldLabels = {
+            thai_name: ['ชื่อภาษาไทย', 'ชื่อสมุนไพร', 'ชื่อไทย'],
+            sci_name: ['ชื่อวิทยาศาสตร์'],
+            family_name: ['ชื่อวงศ์', 'วงศ์', 'family name'],
+            category: ['หมวดหมู่', 'ประเภท'],
+            other_names: ['ชื่ออื่น', 'ชื่ออื่นๆ', 'ชื่อท้องถิ่น'],
+            general_characteristics: ['ลักษณะทั่วไป', 'ลักษณะพืช', 'ลักษณะทางพฤกษศาสตร์'],
+            properties: ['สรรพคุณและวิธีใช้', 'สรรพคุณ', 'วิธีใช้'],
+            parts_used: ['ส่วนที่ใช้เป็นยา', 'ส่วนที่ใช้'],
+            culinary_uses: ['ด้านอาหาร', 'การใช้ประกอบอาหาร', 'ประโยชน์ด้านอาหาร'],
+            additional_info: ['ข้อมูลเพิ่มเติม', 'ข้อควรระวัง', 'หมายเหตุ'],
+            location_found: ['อำเภอที่สำรวจพบ', 'อำเภอที่พบ', 'อำเภอ'],
+            sub_district: ['ตำบล', 'ตำบลที่พบ'],
+            coordinates: ['พิกัดแผนที่', 'พิกัด', 'coordinates']
+        };
+
+        function normalizeWordLabel(label) {
+            return label.toLowerCase().replace(/[\s:：_\-()（）]/g, '');
+        }
+
+        const wordLabelToField = new Map();
+        Object.entries(wordFieldLabels).forEach(([field, labels]) => {
+            labels.forEach(label => wordLabelToField.set(normalizeWordLabel(label), field));
+        });
+
+        function createEmptyWordValues() {
+            return Object.fromEntries(Object.keys(wordFieldLabels).map(field => [field, '']));
+        }
+
+        function importWordValue(field, value, values) {
+            const cleanedValue = value.trim();
+            if (cleanedValue) values[field] = cleanedValue;
+        }
+
+        function getWordField(label) {
+            return wordLabelToField.get(normalizeWordLabel(label.trim()));
+        }
+
+        function fillImportedHerb(values) {
+            const selectValue = (select, value) => {
+                if (!value) return false;
+                const option = Array.from(select.options).find(item =>
+                    normalizeWordLabel(item.value) === normalizeWordLabel(value) ||
+                    normalizeWordLabel(item.textContent) === normalizeWordLabel(value)
+                );
+                if (!option) return false;
+                select.value = option.value;
+                return true;
+            };
+
+            Object.entries(values).forEach(([field, value]) => {
+                if (field === 'location_found' || field === 'sub_district' || field === 'category') return;
+                const input = document.querySelector(`[name="${field}"]`);
+                if (input) input.value = value;
+            });
+
+            const unmatched = [];
+            const failedFields = new Set(Object.keys(wordFieldLabels).filter(field => !values[field]));
+            if (values.category && !selectValue(document.querySelector('[name="category"]'), values.category)) {
+                unmatched.push('หมวดหมู่ไม่ตรงกับตัวเลือกในระบบ');
+                failedFields.add('category');
+            }
+            if (values.location_found) {
+                if (selectValue(districtSelect, values.location_found)) {
+                    updateSubdistricts(districtSelect.value);
+                } else {
+                    unmatched.push('ไม่พบอำเภอในจังหวัดเลย');
+                    failedFields.add('location_found');
+                }
+            }
+            if (values.sub_district && !selectValue(subdistrictSelect, values.sub_district)) {
+                unmatched.push('ไม่พบตำบล หรือยังไม่ได้ระบุอำเภอ');
+                failedFields.add('sub_district');
+            }
+
+            Object.keys(wordFieldLabels).forEach(field => {
+                const control = document.querySelector(`[name="${field}"]`);
+                if (!control) return;
+                let warning = document.querySelector(`[data-import-warning="${field}"]`);
+                if (!warning) {
+                    warning = document.createElement('p');
+                    warning.dataset.importWarning = field;
+                    warning.className = 'mt-1 text-xs text-amber-800';
+                    if (field === 'coordinates') {
+                        control.parentElement.insertAdjacentElement('afterend', warning);
+                    } else {
+                        control.insertAdjacentElement('afterend', warning);
+                    }
+                }
+                warning.textContent = failedFields.has(field) ? 'ดึงข้อมูลฟิลด์นี้ไม่สำเร็จ กรุณากรอกเอง' : '';
+                warning.hidden = !failedFields.has(field);
+            });
+
+            const coordinateInput = document.getElementById('coordinates_input');
+            if (values.coordinates && coordinateInput) {
+                coordinateInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+
+            return unmatched;
+        }
+
+        const batchPreview = document.getElementById('batch-preview');
+        const batchRecordList = document.getElementById('batch-record-list');
+        const singleHerbFields = document.getElementById('single-herb-fields');
+        const batchSaveStatus = document.getElementById('batch-save-status');
+        const batchFieldLabels = {
+            thai_name: 'ชื่อภาษาไทย',
+            sci_name: 'ชื่อวิทยาศาสตร์',
+            family_name: 'ชื่อวงศ์',
+            category: 'หมวดหมู่',
+            other_names: 'ชื่ออื่น ๆ',
+            general_characteristics: 'ลักษณะทั่วไป',
+            properties: 'สรรพคุณและวิธีใช้',
+            parts_used: 'ส่วนที่ใช้เป็นยา',
+            culinary_uses: 'ด้านอาหาร',
+            additional_info: 'ข้อมูลเพิ่มเติม',
+            location_found: 'อำเภอที่พบ',
+            sub_district: 'ตำบล',
+            coordinates: 'พิกัดแผนที่'
+        };
+        const multilineFields = new Set(['general_characteristics', 'properties', 'additional_info']);
+        let batchRecords = [];
+        let batchRecordImages = [];
+
+        function recordHasData(record) {
+            return Object.values(record).some(value => String(value || '').trim() !== '');
+        }
+
+        function parseWordRecords(documentContent, smartArtNames) {
+            const records = [];
+            let current = createEmptyWordValues();
+            let pendingField = null;
+            const ignoredTitles = new Set(['สมุนไพร', 'ข้อมูลสมุนไพร', 'รายละเอียดสมุนไพร', 'หัวข้อ', 'รายละเอียด']);
+
+            function finishRecord() {
+                if (recordHasData(current)) records.push(current);
+                current = createEmptyWordValues();
+                pendingField = null;
+            }
+
+            function setField(field, value) {
+                const cleanedValue = String(value || '').trim();
+                if (!cleanedValue) return;
+                if ((field === 'sci_name' && current.sci_name) || (field === 'thai_name' && recordHasData(current))) {
+                    finishRecord();
+                }
+                current[field] = cleanedValue;
+                pendingField = null;
+            }
+
+            const elements = documentContent.querySelectorAll('tr, p, h1, h2, h3, li');
+            elements.forEach(element => {
+                if (element.tagName === 'TR') {
+                    const cells = Array.from(element.querySelectorAll(':scope > td, :scope > th'));
+                    if (cells.length < 2) return;
+                    const field = getWordField(cells[0].textContent);
+                    if (field) setField(field, cells.slice(1).map(cell => cell.textContent).join('\n'));
+                    return;
+                }
+                if (element.closest('table') || element.tagName === 'LI') return;
+
+                const text = element.textContent.trim();
+                if (!text) return;
+                const separatorIndex = text.search(/[:：]/);
+                if (separatorIndex >= 0) {
+                    const field = getWordField(text.slice(0, separatorIndex));
+                    if (field) {
+                        setField(field, text.slice(separatorIndex + 1));
+                        return;
+                    }
+                }
+
+                const standaloneField = getWordField(text);
+                if (standaloneField) {
+                    pendingField = standaloneField;
+                    return;
+                }
+                if (pendingField) {
+                    setField(pendingField, text);
+                    return;
+                }
+
+                const normalizedText = normalizeWordLabel(text);
+                if (ignoredTitles.has(normalizedText) || getWordField(text)) return;
+                if (['H1', 'H2', 'H3'].includes(element.tagName)) {
+                    setField('thai_name', text);
+                } else if (!recordHasData(current)) {
+                    setField('thai_name', text);
+                }
+            });
+
+            finishRecord();
+
+            smartArtNames.forEach((name, index) => {
+                const cleanedName = String(name || '').trim();
+                if (!cleanedName) return;
+                if (!records[index]) records[index] = createEmptyWordValues();
+                records[index].thai_name = cleanedName;
+            });
+
+            return records.filter(Boolean);
+        }
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
+        function renderBatchPreview(records, images) {
+            batchRecords = records.map(record => ({ ...record }));
+            batchRecordImages = records.map((record, index) => images[index] || null);
+            batchRecordList.innerHTML = batchRecords.map((record, index) => {
+                const fields = Object.entries(batchFieldLabels).map(([field, label]) => {
+                    const value = escapeHtml(record[field]);
+                    const control = multilineFields.has(field)
+                        ? `<textarea data-batch-field="${field}" rows="${field === 'properties' ? 3 : 2}" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">${value}</textarea>`
+                        : `<input data-batch-field="${field}" type="text" value="${value}" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2">`;
+                    const required = field === 'thai_name' || field === 'properties';
+                    const warning = record[field] ? '' : '<span class="mt-1 block text-xs font-normal text-amber-800">ดึงข้อมูลฟิลด์นี้ไม่สำเร็จ กรุณากรอกเอง</span>';
+                    return `<label class="block text-sm font-medium text-gray-700">${label}${required ? ' *' : ''}${control}${warning}</label>`;
+                }).join('');
+                const image = batchRecordImages[index];
+                const imagePreview = image
+                    ? `<img src="${URL.createObjectURL(image)}" alt="รูปสมุนไพร ${index + 1}" class="mt-2 h-24 w-24 rounded-lg border border-gray-200 object-cover">`
+                    : '<p class="mt-1 text-xs text-gray-500">ไม่มีรูปสำหรับรายการนี้</p>';
+                return `<fieldset class="rounded-lg border border-gray-200 p-4" data-batch-index="${index}"><legend class="px-1 font-semibold text-gray-800">สมุนไพรลำดับ ${index + 1}</legend><div class="grid grid-cols-1 gap-3 md:grid-cols-2">${fields}</div><div class="mt-3 text-sm text-gray-700">รูปหลักตามลำดับในเอกสาร${imagePreview}</div></fieldset>`;
+            }).join('');
+
+            document.getElementById('batch-preview-title').textContent = `ตรวจทานข้อมูล ${records.length} รายการ`;
+            batchSaveStatus.textContent = images.length > records.length
+                ? `พบรูป ${images.length} รูป แต่มี ${records.length} รายการ จึงใช้รูปแรกของแต่ละรายการและข้าม ${images.length - records.length} รูปที่เหลือ`
+                : images.length < records.length
+                    ? `พบ ${records.length} รายการ แต่มีรูป ${images.length} รูป รายการที่ไม่มีรูปจะบันทึกโดยไม่มีรูปหลัก`
+                    : '';
+            batchSaveStatus.className = 'text-sm text-amber-800';
+            batchPreview.classList.remove('hidden');
+            singleHerbFields.classList.add('hidden');
+        }
+
+        document.getElementById('batch-cancel').addEventListener('click', () => {
+            batchPreview.classList.add('hidden');
+            singleHerbFields.classList.remove('hidden');
+            batchRecords = [];
+            batchRecordImages = [];
+        });
+
+        document.getElementById('batch-save').addEventListener('click', async () => {
+            const cards = Array.from(batchRecordList.querySelectorAll('[data-batch-index]'));
+            const records = cards.map(card => {
+                const record = {};
+                card.querySelectorAll('[data-batch-field]').forEach(input => {
+                    record[input.dataset.batchField] = input.value.trim();
+                });
+                return record;
+            });
+            const incompleteIndex = records.findIndex(record => !record.thai_name || !record.properties);
+            if (incompleteIndex >= 0) {
+                batchSaveStatus.textContent = `รายการที่ ${incompleteIndex + 1} ต้องกรอกชื่อภาษาไทยและสรรพคุณก่อนบันทึก`;
+                batchSaveStatus.className = 'text-sm text-red-700';
+                return;
+            }
+
+            const saveButton = document.getElementById('batch-save');
+            saveButton.disabled = true;
+            batchSaveStatus.textContent = `กำลังบันทึก ${records.length} รายการ...`;
+            batchSaveStatus.className = 'text-sm text-gray-600';
+
+            try {
+                const formData = new FormData();
+                formData.append('csrf_token', document.querySelector('[name="csrf_token"]').value);
+                formData.append('records', JSON.stringify(records));
+                batchRecordImages.forEach((image, index) => {
+                    if (image) formData.append(`images[${index}]`, image, image.name);
+                });
+                const response = await fetch('herb_batch_save.php', { method: 'POST', body: formData });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'บันทึกข้อมูลไม่สำเร็จ');
+                batchSaveStatus.textContent = `บันทึกสมุนไพร ${result.count} รายการเรียบร้อยแล้ว`;
+                batchSaveStatus.className = 'text-sm text-green-700';
+                window.location.href = 'index.php';
+            } catch (error) {
+                batchSaveStatus.textContent = error.message;
+                batchSaveStatus.className = 'text-sm text-red-700';
+                saveButton.disabled = false;
+            }
+        });
+
+        wordImportInput.addEventListener('change', async () => {
+            const file = wordImportInput.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.docx')) {
+                wordImportStatus.textContent = 'รองรับไฟล์ Word .docx เท่านั้น';
+                wordImportStatus.className = 'mt-2 text-sm text-red-700';
+                wordImportInput.value = '';
+                return;
+            }
+            if (!window.mammoth) {
+                wordImportStatus.textContent = 'โหลดตัวอ่าน Word ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่';
+                wordImportStatus.className = 'mt-2 text-sm text-red-700';
+                return;
+            }
+
+            Object.keys(wordFieldLabels).forEach(field => {
+                const control = document.querySelector(`[name="${field}"]`);
+                if (control) control.value = '';
+                const warning = document.querySelector(`[data-import-warning="${field}"]`);
+                if (warning) {
+                    warning.textContent = '';
+                    warning.hidden = true;
+                }
+            });
+            updateSubdistricts('');
+            batchPreview.classList.add('hidden');
+            singleHerbFields.classList.remove('hidden');
+            batchRecords = [];
+            batchRecordImages = [];
+
+            wordImportStatus.textContent = 'กำลังอ่านเอกสาร...';
+            wordImportStatus.className = 'mt-2 text-sm text-gray-600';
+
+            try {
+                const result = await window.mammoth.convertToHtml(
+                    { arrayBuffer: await file.arrayBuffer() },
+                    {
+                        convertImage: window.mammoth.images.imgElement(image =>
+                            image.read('base64').then(imageBuffer => ({
+                                src: `data:${image.contentType};base64,${imageBuffer}`
+                            }))
+                        )
+                    }
+                );
+                const documentContent = new DOMParser().parseFromString(result.value, 'text/html');
+                let smartArtNames = [];
+                let smartArtUnavailable = false;
+                let smartArtError = '';
+                const smartArtRequest = new FormData();
+                smartArtRequest.append('docx', file);
+                smartArtRequest.append('csrf_token', document.querySelector('[name="csrf_token"]').value);
+                try {
+                    const smartArtResponse = await fetch('docx_smartart.php', {
+                        method: 'POST',
+                        body: smartArtRequest,
+                        credentials: 'same-origin'
+                    });
+                    const smartArtResult = await smartArtResponse.json();
+                    if (smartArtResponse.ok && smartArtResult.success) {
+                        smartArtNames = Array.isArray(smartArtResult.thai_names) ? smartArtResult.thai_names : [];
+                    } else {
+                        smartArtUnavailable = true;
+                        smartArtError = smartArtResult.message || '';
+                    }
+                } catch (error) {
+                    smartArtUnavailable = true;
+                    smartArtError = error.message;
+                }
+
+                const imageExtensions = {
+                    'image/jpeg': 'jpg',
+                    'image/png': 'png',
+                    'image/gif': 'gif',
+                    'image/webp': 'webp'
+                };
+                const embeddedImages = [];
+                for (const imageElement of documentContent.querySelectorAll('img')) {
+                    const imageSource = imageElement.getAttribute('src') || '';
+                    if (!imageSource.startsWith('data:image/')) continue;
+                    const imageBlob = await fetch(imageSource).then(response => response.blob());
+                    const extension = imageExtensions[imageBlob.type.toLowerCase()];
+                    if (!extension) continue;
+                    embeddedImages.push(new File(
+                        [imageBlob],
+                        `word-image-${embeddedImages.length + 1}.${extension}`,
+                        { type: imageBlob.type }
+                    ));
+                }
+
+                const records = parseWordRecords(documentContent, smartArtNames);
+                if (records.length > 1) {
+                    renderBatchPreview(records, embeddedImages);
+                    const messages = [`พบสมุนไพร ${records.length} รายการ แยกตามฟิลด์ชื่อวิทยาศาสตร์ที่พบซ้ำ`];
+                    if (smartArtNames.length) messages.push(`จับคู่ชื่อจาก SmartArt ${smartArtNames.length} ชื่อ`);
+                    if (smartArtUnavailable) messages.push(smartArtError || 'อ่าน SmartArt ไม่สำเร็จ ตรวจสอบการเข้าสู่ระบบและตรวจชื่อไทยในพรีวิว');
+                    wordImportStatus.textContent = messages.join(' ');
+                    wordImportStatus.className = `mt-2 text-sm ${smartArtUnavailable || smartArtNames.length !== records.length ? 'text-amber-800' : 'text-green-700'}`;
+                    return;
+                }
+
+                const values = records[0] || createEmptyWordValues();
+                if (!Object.keys(values).length && !embeddedImages.length) {
+                    throw new Error('ไม่พบข้อมูลที่มีป้ายชื่อฟิลด์');
+                }
+
+                const unmatched = fillImportedHerb(values);
+                if (embeddedImages.length) {
+                    const mainImageInput = document.getElementById('image');
+                    const galleryInput = document.getElementById('gallery');
+                    const setInputFiles = (input, files) => {
+                        const transfer = new DataTransfer();
+                        files.forEach(imageFile => transfer.items.add(imageFile));
+                        input.files = transfer.files;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    };
+                    setInputFiles(mainImageInput, [embeddedImages[0]]);
+                    setInputFiles(galleryInput, embeddedImages.slice(1, 6));
+                }
+
+                const fieldCount = Object.values(values).filter(value => String(value || '').trim() !== '').length;
+                const importedImageCount = Math.min(embeddedImages.length, 6);
+                const omittedImageCount = embeddedImages.length - importedImageCount;
+                const importNotes = [...unmatched];
+                if (smartArtNames.length) importNotes.push('อ่านชื่อภาษาไทยจาก SmartArt แล้ว');
+                if (smartArtUnavailable) importNotes.push(smartArtError || 'อ่าน SmartArt ไม่สำเร็จ ตรวจสอบการเข้าสู่ระบบและลองใหม่');
+                if (embeddedImages.length) {
+                    importNotes.push(`นำเข้ารูป ${importedImageCount} รูป (รูปหลัก 1 รูป และ Gallery สูงสุด 5 รูป)`);
+                } else {
+                    importNotes.push('ไม่พบรูปที่รองรับ กรุณาเลือกหรือแนบรูปหลักเอง');
+                }
+                if (omittedImageCount) importNotes.push(`ข้ามรูปอีก ${omittedImageCount} รูป เนื่องจากเกินจำนวนที่รองรับ`);
+                wordImportStatus.textContent = `นำเข้าข้อมูล ${fieldCount} ช่องแล้ว กรุณาตรวจทาน (${importNotes.join('; ')})`;
+                wordImportStatus.className = `mt-2 text-sm ${unmatched.length || omittedImageCount || !embeddedImages.length || smartArtUnavailable ? 'text-amber-800' : 'text-green-700'}`;
+            } catch (error) {
+                wordImportStatus.textContent = error.message === 'ไม่พบข้อมูลที่มีป้ายชื่อฟิลด์'
+                    ? 'ไม่พบข้อมูลตามรูปแบบที่รองรับ กรุณาใช้ตาราง 2 คอลัมน์ หรือรูปแบบ “ชื่อฟิลด์: ค่า”'
+                    : 'อ่านไฟล์ Word ไม่สำเร็จ กรุณาตรวจสอบว่าเป็นไฟล์ .docx ที่เปิดได้';
+                wordImportStatus.className = 'mt-2 text-sm text-red-700';
+            }
         });
 
     </script>

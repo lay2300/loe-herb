@@ -4,9 +4,34 @@ require_once 'config/db.php';
 
 // รับค่าหมวดหมู่ที่เลือก (ถ้ามี)
 $selected_cat = isset($_GET['cat']) ? $_GET['cat'] : null;
+$selected_group = isset($_GET['group']) ? $_GET['group'] : '';
+$herbs = [];
+$db_categories = [];
+$symptom_groups = [
+    'pain' => ['name' => 'กลุ่มแก้ปวดเมื่อย', 'keywords' => ['ปวดเมื่อย', 'ปวดกล้ามเนื้อ', 'ปวดข้อ', 'ปวดเอว', 'แก้ปวด', 'เมื่อยล้า'], 'icon' => '💪', 'color' => 'bg-orange-100 text-orange-700'],
+    'heart' => ['name' => 'กลุ่มบำรุงหัวใจ', 'keywords' => ['หัวใจ'], 'icon' => '❤️', 'color' => 'bg-red-100 text-red-700'],
+    'skin' => ['name' => 'กลุ่มรักษาโรคผิวหนัง', 'keywords' => ['ผิวหนัง', 'กลาก', 'เกลื้อน', 'ผื่น', 'คัน'], 'icon' => '🧴', 'color' => 'bg-pink-100 text-pink-700'],
+    'fever' => ['name' => 'กลุ่มแก้ไข้/ตัวร้อน', 'keywords' => ['ไข้', 'ตัวร้อน'], 'icon' => '🌡️', 'color' => 'bg-blue-100 text-blue-700'],
+    'digestive' => ['name' => 'กลุ่มระบบทางเดินอาหาร', 'keywords' => ['ท้องเสีย', 'ท้องผูก', 'ท้องอืด', 'ปวดท้อง', 'ขับลม', 'อาหารไม่ย่อย', 'ทางเดินอาหาร'], 'icon' => '🤢', 'color' => 'bg-yellow-100 text-yellow-700'],
+    'tonic' => ['name' => 'กลุ่มบำรุงกำลัง', 'keywords' => ['บำรุงกำลัง', 'บำรุงร่างกาย', 'กำลังวังชา', 'อ่อนเพลีย'], 'icon' => '⚡', 'color' => 'bg-green-100 text-green-700'],
+];
 
 try {
-    if ($selected_cat) {
+    if (isset($symptom_groups[$selected_group])) {
+        $keywords = $symptom_groups[$selected_group]['keywords'];
+        $conditions = [];
+        $params = [];
+        foreach ($keywords as $keyword) {
+            $conditions[] = '(properties LIKE ? OR additional_info LIKE ?)';
+            $params[] = '%' . $keyword . '%';
+            $params[] = '%' . $keyword . '%';
+        }
+
+        $sql = 'SELECT * FROM herbs WHERE (' . implode(' OR ', $conditions) . ') ORDER BY thai_name ASC';
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        $herbs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } elseif ($selected_cat) {
         // 1. กรณีเลือกหมวดหมู่: ดึงรายการสมุนไพรในหมวดนั้น
         $sql = "SELECT * FROM herbs WHERE category = :cat ORDER BY thai_name ASC";
         $stmt = $conn->prepare($sql);
@@ -24,15 +49,6 @@ try {
         $stmt = $conn->query($sql);
         $db_categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // 2.2 กำหนดกลุ่มอาการยอดนิยม (Hardcoded สำหรับการค้นหาตามสรรพคุณ)
-        $symptom_groups = [
-            ['name' => 'กลุ่มแก้ปวดเมื่อย', 'keyword' => 'ปวด', 'icon' => '💪', 'color' => 'bg-orange-100 text-orange-700'],
-            ['name' => 'กลุ่มบำรุงหัวใจ', 'keyword' => 'หัวใจ', 'icon' => '❤️', 'color' => 'bg-red-100 text-red-700'],
-            ['name' => 'กลุ่มรักษาโรคผิวหนัง', 'keyword' => 'ผิวหนัง', 'icon' => '🧴', 'color' => 'bg-pink-100 text-pink-700'],
-            ['name' => 'กลุ่มแก้ไข้/ตัวร้อน', 'keyword' => 'ไข้', 'icon' => '🌡️', 'color' => 'bg-blue-100 text-blue-700'],
-            ['name' => 'กลุ่มระบบทางเดินอาหาร', 'keyword' => 'ท้อง', 'icon' => '🤢', 'color' => 'bg-yellow-100 text-yellow-700'],
-            ['name' => 'กลุ่มบำรุงกำลัง', 'keyword' => 'บำรุงกำลัง', 'icon' => '⚡', 'color' => 'bg-green-100 text-green-700'],
-        ];
     }
 } catch (PDOException $e) {
     die("Error: " . $e->getMessage());
@@ -95,19 +111,24 @@ try {
 
     <main class="max-w-7xl mx-auto px-4 py-12">
         
-        <?php if ($selected_cat): ?>
-            <!-- แสดงรายการสมุนไพรในหมวดหมู่ที่เลือก -->
+        <?php if ($selected_cat || isset($symptom_groups[$selected_group])): ?>
+            <!-- แสดงรายการสมุนไพรในกลุ่มสรรพคุณหรือหมวดหมู่ที่เลือก -->
             <div class="mb-8">
                 <a href="categories.php" class="text-green-600 hover:underline flex items-center mb-4">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                     กลับไปหน้าหมวดหมู่รวม
                 </a>
                 <h2 class="text-3xl font-bold text-gray-800 border-l-4 border-green-600 pl-4">
-                    หมวดหมู่: <?php echo htmlspecialchars($selected_cat); ?>
+                    <?php echo isset($symptom_groups[$selected_group])
+                        ? htmlspecialchars($symptom_groups[$selected_group]['name'])
+                        : 'หมวดหมู่: ' . htmlspecialchars($selected_cat); ?>
                 </h2>
-                <p class="text-gray-500 mt-2 pl-5">พบ <?php echo count($herbs); ?> รายการ</p>
+                <p class="text-gray-500 mt-2 pl-5">
+                    พบ <?php echo count($herbs); ?> รายการ<?php if (isset($symptom_groups[$selected_group])): ?> จากคำที่ระบุในสรรพคุณและข้อมูลเพิ่มเติม<?php endif; ?>
+                </p>
             </div>
 
+            <?php if (count($herbs) > 0): ?>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <?php foreach($herbs as $row): ?>
                     <div class="bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100 flex flex-col h-full">
@@ -126,6 +147,9 @@ try {
                     </div>
                 <?php endforeach; ?>
             </div>
+            <?php else: ?>
+                <p class="rounded-xl bg-white p-8 text-center text-gray-500">ยังไม่พบสมุนไพรที่มีข้อมูลสรรพคุณตรงกับกลุ่มนี้</p>
+            <?php endif; ?>
 
         <?php else: ?>
             <!-- หน้าแสดงหมวดหมู่รวม -->
@@ -137,8 +161,8 @@ try {
                     ค้นหาตามกลุ่มอาการรักษา
                 </h2>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    <?php foreach($symptom_groups as $group): ?>
-                        <a href="index.php?search=<?php echo urlencode($group['keyword']); ?>" 
+                    <?php foreach($symptom_groups as $group_id => $group): ?>
+                        <a href="categories.php?group=<?php echo urlencode($group_id); ?>"
                            class="<?php echo $group['color']; ?> p-4 rounded-2xl text-center hover:shadow-md hover:scale-105 transition duration-300 flex flex-col items-center justify-center h-32 border border-white/50 shadow-sm">
                             <span class="symptom-icon"><?php echo $group['icon']; ?></span>
                             <span class="font-bold text-sm"><?php echo $group['name']; ?></span>

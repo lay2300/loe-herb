@@ -33,7 +33,7 @@ if (isset($_GET['id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $article['title']; ?> - ภูมิปัญญาท้องถิ่น</title>
+    <title><?php echo htmlspecialchars($article['title'], ENT_QUOTES, 'UTF-8'); ?> - ภูมิปัญญาท้องถิ่น</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
@@ -86,22 +86,22 @@ if (isset($_GET['id'])) {
             <!-- Cover Image -->
             <?php if($article['image_path']): ?>
                 <div class="article-cover h-64 md:h-96 w-full">
-                    <img src="uploads/<?php echo $article['image_path']; ?>" class="w-full h-full object-cover">
+                    <img src="uploads/<?php echo htmlspecialchars($article['image_path'], ENT_QUOTES, 'UTF-8'); ?>" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div class="absolute bottom-0 left-0 p-8 text-white">
                         <div class="flex flex-wrap gap-2 mb-3">
                             <?php foreach($tags as $tag): ?>
                                 <span class="bg-green-600/80 backdrop-blur text-white text-xs font-bold px-2 py-1 rounded-md">
-                                    #<?php echo trim($tag); ?>
+                                    #<?php echo htmlspecialchars(trim($tag), ENT_QUOTES, 'UTF-8'); ?>
                                 </span>
                             <?php endforeach; ?>
                         </div>
-                        <h1 class="text-3xl md:text-4xl font-bold leading-tight shadow-black drop-shadow-md"><?php echo $article['title']; ?></h1>
+                        <h1 class="text-3xl md:text-4xl font-bold leading-tight shadow-black drop-shadow-md"><?php echo htmlspecialchars($article['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
                     </div>
                 </div>
             <?php else: ?>
                 <div class="p-8 border-b border-gray-100">
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 leading-tight"><?php echo $article['title']; ?></h1>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 leading-tight"><?php echo htmlspecialchars($article['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
                 </div>
             <?php endif; ?>
 
@@ -109,11 +109,11 @@ if (isset($_GET['id'])) {
             <div class="p-8 md:p-12">
                 <div class="flex flex-col sm:flex-row sm:items-center text-gray-500 text-sm mb-8 pb-8 border-b border-gray-100 gap-3 sm:gap-6">
                     <span class="flex items-center mr-6"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> <?php echo date('d/m/Y', strtotime($article['created_at'])); ?></span>
-                    <span class="flex items-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> เขียนโดย: <?php echo $article['author']; ?></span>
+                    <span class="flex items-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> เขียนโดย: <?php echo htmlspecialchars($article['author'], ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
 
                 <div class="prose prose-lg prose-green max-w-none text-gray-600 leading-loose">
-                    <?php echo nl2br($article['content']); ?>
+                    <?php echo nl2br(htmlspecialchars($article['content'], ENT_QUOTES, 'UTF-8')); ?>
                 </div>
             </div>
         </article>

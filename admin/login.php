@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once '../config/security.php';
+start_secure_session();
 require_once '../config/db.php'; // เชื่อมต่อฐานข้อมูล
 
 // ถ้าล็อกอินอยู่แล้ว ให้เด้งไปหน้า index
@@ -16,8 +17,11 @@ $error = '';
 
 // ตรวจสอบการกดปุ่ม Login
 if (isset($_POST['login'])) {
-    $username = trim($_POST['username']); // ตัดช่องว่างหน้า-หลังออก ป้องกัน Error
-    $password = $_POST['password'];
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $error = 'คำขอไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
+    } else {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
 
     // ตรวจสอบจากฐานข้อมูล
     $stmt = $conn->prepare("SELECT * FROM admins WHERE username = :username");
@@ -31,6 +35,7 @@ if (isset($_POST['login'])) {
         }
         // ตรวจสอบรหัสผ่านที่เข้ารหัสแล้วเท่านั้น
         else if (password_verify($password, $user['password'])) {
+            session_regenerate_id(true);
             $_SESSION['admin_login'] = true; // ตั้งค่า Session ว่าล็อกอินแล้ว
             $_SESSION['admin_id'] = $user['id']; // เก็บ ID ผู้ใช้ไว้สำหรับเปลี่ยนรหัสผ่าน
             header("Location: index.php");
@@ -40,6 +45,7 @@ if (isset($_POST['login'])) {
         }
     } else {
         $error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+    }
     }
 }
 ?>
@@ -91,6 +97,7 @@ if (isset($_POST['login'])) {
         <?php endif; ?>
 
         <form action="" method="POST" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="<?php echo e(csrf_token()); ?>">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1 ml-1">ชื่อผู้ใช้งาน</label>
                 <div class="relative">

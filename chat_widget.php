@@ -75,6 +75,15 @@ if (isset($_SESSION['user_login']) && isset($conn)) {
             echo json_encode(['status' => 'error']);
             exit();
         }
+
+            // ใช้ Post/Redirect/Get สำหรับกรณีที่ JavaScript ไม่ได้ดักฟอร์มไว้
+            $redirect_url = $_SERVER['HTTP_REFERER'] ?? 'index.php';
+            $redirect_parts = parse_url($redirect_url);
+            if (($redirect_parts['host'] ?? $_SERVER['HTTP_HOST']) !== $_SERVER['HTTP_HOST']) {
+                $redirect_url = 'index.php';
+            }
+            header('Location: ' . $redirect_url);
+            exit();
     }
 
     // สำหรับการดึงข้อความใหม่ (AJAX Polling)
@@ -155,7 +164,7 @@ if (isset($_SESSION['user_login']) && isset($conn)) {
                 </div>
             </div>
         </div>
-        <form id="widget-chat-form" method="POST" enctype="multipart/form-data" class="p-2 border-t border-gray-200 bg-white flex gap-2 shrink-0 z-10 items-center">
+        <form id="widget-chat-form" action="chat_widget.php" method="POST" enctype="multipart/form-data" class="p-2 border-t border-gray-200 bg-white flex gap-2 shrink-0 z-10 items-center">
             <label class="cursor-pointer text-gray-400 hover:text-green-600 transition p-1">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
                 <input type="file" id="widget_chat_image" name="chat_image" accept="image/*" class="hidden">

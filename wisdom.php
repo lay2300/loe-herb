@@ -7,9 +7,14 @@ $search = isset($_GET['search']) ? $_GET['search'] : '';
 
 try {
     if ($search) {
-        $sql = "SELECT * FROM articles WHERE title LIKE :s OR content LIKE :s OR tags LIKE :s ORDER BY created_at DESC";
+        $sql = "SELECT * FROM articles WHERE title LIKE :search_title OR content LIKE :search_content OR tags LIKE :search_tags ORDER BY created_at DESC";
         $stmt = $conn->prepare($sql);
-        $stmt->execute(['s' => "%$search%"]);
+        $search_param = "%$search%";
+        $stmt->execute([
+            'search_title' => $search_param,
+            'search_content' => $search_param,
+            'search_tags' => $search_param
+        ]);
     } else {
         $sql = "SELECT * FROM articles ORDER BY created_at DESC";
         $stmt = $conn->query($sql);
@@ -110,14 +115,14 @@ try {
                     <!-- Image -->
                     <div class="md:w-2/5 relative overflow-hidden h-64 md:h-auto">
                         <?php if($article['image_path']): ?>
-                            <img src="uploads/<?php echo $article['image_path']; ?>" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <img src="uploads/<?php echo htmlspecialchars($article['image_path'], ENT_QUOTES, 'UTF-8'); ?>" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                         <?php else: ?>
                             <div class="absolute inset-0 w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">ไม่มีรูปภาพ</div>
                         <?php endif; ?>
                         <div class="absolute top-4 left-4 flex flex-wrap gap-2">
                             <?php foreach($tags as $tag): ?>
                                 <span class="bg-white/90 backdrop-blur text-green-800 text-xs font-bold px-2 py-1 rounded-md shadow-sm">
-                                    #<?php echo trim($tag); ?>
+                                    #<?php echo htmlspecialchars(trim($tag), ENT_QUOTES, 'UTF-8'); ?>
                                 </span>
                             <?php endforeach; ?>
                         </div>
@@ -129,13 +134,13 @@ try {
                             <div class="flex items-center text-gray-400 text-xs mb-3 space-x-2">
                                 <span>🗓️ <?php echo date('d/m/Y', strtotime($article['created_at'])); ?></span>
                                 <span>•</span>
-                                <span>✍️ <?php echo $article['author']; ?></span>
+                                <span>✍️ <?php echo htmlspecialchars($article['author'], ENT_QUOTES, 'UTF-8'); ?></span>
                             </div>
                             <h2 class="text-2xl font-bold text-gray-800 mb-3 group-hover:text-green-700 transition leading-tight">
-                                <?php echo $article['title']; ?>
+                                <?php echo htmlspecialchars($article['title'], ENT_QUOTES, 'UTF-8'); ?>
                             </h2>
                             <p class="text-gray-600 mb-4 line-clamp-3">
-                                <?php echo $excerpt; ?>
+                                <?php echo htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8'); ?>
                             </p>
                         </div>
                         

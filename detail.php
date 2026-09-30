@@ -72,7 +72,7 @@ if (isset($_GET['id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $herb['thai_name']; ?> - ข้อมูลสมุนไพรจังหวัดเลย</title>
+    <title><?php echo htmlspecialchars($herb['thai_name'], ENT_QUOTES, 'UTF-8'); ?> - ข้อมูลสมุนไพรจังหวัดเลย</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css?v=<?php echo time(); ?>">
@@ -118,7 +118,7 @@ if (isset($_GET['id'])) {
             <div class="lg:sticky lg:top-24 h-fit">
                 <div class="herb-image-container">
                     <?php if($herb['image_path']): ?>
-                        <img src="uploads/<?php echo $herb['image_path']; ?>" class="herb-image w-full h-auto object-cover cursor-pointer" onclick="openLightbox(this.src)">
+                        <img src="uploads/<?php echo htmlspecialchars($herb['image_path'], ENT_QUOTES, 'UTF-8'); ?>" class="herb-image w-full h-auto object-cover cursor-pointer" onclick="openLightbox(this.src)">
                     <?php else: ?>
                         <div class="w-full h-96 bg-gray-200 flex items-center justify-center text-gray-400">ไม่มีรูปภาพประกอบ</div>
                     <?php endif; ?>
@@ -133,25 +133,24 @@ if (isset($_GET['id'])) {
             <!-- Right Column: Content -->
             <div class="bg-white p-6 md:p-10 rounded-3xl shadow-lg border border-gray-100 h-fit">
                 <div class="mb-8 border-b border-gray-100 pb-6">
-                    <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-3 text-green-900"><?php echo $herb['thai_name']; ?></h1>
-                    <p class="text-xl text-gray-500 font-medium">ชื่อท้องถิ่น: <span class="text-green-600"><?php echo $herb['local_name'] ? $herb['local_name'] : '-'; ?></span></p>
+                    <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-3 text-green-900"><?php echo htmlspecialchars($herb['thai_name'], ENT_QUOTES, 'UTF-8'); ?></h1>
                     <?php if(!empty($herb['other_names'])): ?>
-                        <p class="text-md text-gray-400 mt-1">ชื่ออื่น ๆ: <?php echo $herb['other_names']; ?></p>
+                        <p class="text-md text-gray-400 mt-1">ชื่ออื่น ๆ: <?php echo htmlspecialchars($herb['other_names'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <?php endif; ?>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div class="info-card bg-blue-50 p-5 rounded-2xl border border-blue-100">
                         <span class="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1">ชื่อวิทยาศาสตร์</span>
-                        <span class="text-blue-900 italic font-medium text-lg"><?php echo $herb['sci_name'] ? $herb['sci_name'] : 'ไม่ระบุ'; ?></span>
+                        <span class="text-blue-900 italic font-medium text-lg"><?php echo htmlspecialchars($herb['sci_name'] ?: 'ไม่ระบุ', ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
                     <div class="info-card bg-purple-50 p-5 rounded-2xl border border-purple-100">
                         <span class="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1">ชื่อวงศ์</span>
-                        <span class="text-purple-900 font-medium text-lg"><?php echo !empty($herb['family_name']) ? $herb['family_name'] : '-'; ?></span>
+                        <span class="text-purple-900 font-medium text-lg"><?php echo htmlspecialchars($herb['family_name'] ?: '-', ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
                     <div class="info-card bg-orange-50 p-5 rounded-2xl border border-orange-100">
                         <span class="text-xs text-gray-400 uppercase font-bold tracking-wider block mb-1">หมวดหมู่</span>
-                        <span class="text-orange-900 font-medium text-lg"><?php echo !empty($herb['category']) ? $herb['category'] : '-'; ?></span>
+                        <span class="text-orange-900 font-medium text-lg"><?php echo htmlspecialchars($herb['category'] ?: '-', ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
                 </div>
                 

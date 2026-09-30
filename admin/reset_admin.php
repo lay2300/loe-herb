@@ -1,5 +1,10 @@
 <?php
-// สคริปต์รีเซ็ตรหัสผ่านสำหรับแก้ไขปัญหา "รหัสผ่านไม่ถูกต้อง"
+// ต้องล็อกอินก่อน จึงจะใช้การรีเซ็ตแบบผู้ดูแลได้
+session_start();
+if (!isset($_SESSION['admin_login'])) {
+    header('Location: login.php');
+    exit();
+}
 require_once '../config/db.php';
 
 try {
@@ -11,22 +16,10 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-    // 2. ลบ user 'admin' เดิมออกก่อน (เพื่อล้างค่าเก่าที่อาจรหัสผิด)
-    $conn->exec("DELETE FROM admins WHERE username = 'admin'");
-
-    // 3. เพิ่ม user 'admin' ใหม่ ด้วยรหัส '1234'
-    $password_hash = password_hash('1234', PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("INSERT INTO admins (username, password) VALUES ('admin', :pass)");
-    $stmt->execute(['pass' => $password_hash]);
-
     echo "<div style='text-align:center; padding: 50px; font-family: sans-serif;'>";
-    echo "<h1 style='color:green;'>✅ รีเซ็ตรหัสผ่านสำเร็จ!</h1>";
-    echo "<p>ตอนนี้คุณสามารถเข้าสู่ระบบได้ด้วยข้อมูล:</p>";
-    echo "<div style='background:#f0f0f0; display:inline-block; padding:20px; border-radius:10px; text-align:left;'>";
-    echo "Username: <b>admin</b><br>";
-    echo "Password: <b>1234</b>";
-    echo "</div><br><br>";
-    echo "<a href='login.php' style='background: #166534; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;'>เข้าสู่ระบบทันที</a>";
+    echo "<h1 style='color:green;'>✅ ตารางผู้ดูแลพร้อมใช้งาน</h1>";
+    echo "<p>กรุณาใช้หน้าเปลี่ยนรหัสผ่านหลังจากเข้าสู่ระบบ</p>";
+    echo "<a href='change_password.php'>ไปหน้าเปลี่ยนรหัสผ่าน</a>";
     echo "</div>";
 
 } catch (PDOException $e) {

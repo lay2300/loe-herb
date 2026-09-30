@@ -35,30 +35,40 @@ try {
 
     // 2. ข้อมูลสำหรับตาราง (Search & Pagination)
     $sql_count = "SELECT COUNT(*) FROM herbs 
-                  WHERE thai_name LIKE :s 
-                  OR local_name LIKE :s 
-                  OR sci_name LIKE :s 
-                  OR other_names LIKE :s 
-                  OR properties LIKE :s";
+                  WHERE thai_name LIKE :search_count_1
+                  OR local_name LIKE :search_count_2
+                  OR sci_name LIKE :search_count_3
+                  OR other_names LIKE :search_count_4
+                  OR properties LIKE :search_count_5";
     $stmt_count = $conn->prepare($sql_count);
-    $stmt_count->execute(['s' => $search_param]);
+    $stmt_count->execute([
+        'search_count_1' => $search_param,
+        'search_count_2' => $search_param,
+        'search_count_3' => $search_param,
+        'search_count_4' => $search_param,
+        'search_count_5' => $search_param
+    ]);
     $total_items = $stmt_count->fetchColumn();
     $total_pages = ceil($total_items / $limit);
 
     // ดึงข้อมูลตามหน้า
     $sql = "SELECT * FROM herbs 
-            WHERE thai_name LIKE :s 
-            OR local_name LIKE :s 
-            OR sci_name LIKE :s 
-            OR other_names LIKE :s 
-            OR properties LIKE :s
+            WHERE thai_name LIKE :search_1
+            OR local_name LIKE :search_2
+            OR sci_name LIKE :search_3
+            OR other_names LIKE :search_4
+            OR properties LIKE :search_5
             ORDER BY id DESC 
             LIMIT :limit OFFSET :offset";
 
 
 
     $stmt = $conn->prepare($sql);
-    $stmt->bindValue(':s', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_1', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_2', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_3', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_4', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_5', $search_param, PDO::PARAM_STR);
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -90,6 +100,7 @@ try {
                 <a href="index.php" class="block py-2.5 px-4 rounded-xl bg-green-800 text-white font-semibold shadow-sm"><i class="fi fi-rr-document-signed"></i> รายการสมุนไพร</a>
                 <a href="articles.php" class="admin-nav-link block py-2.5 px-4 rounded-xl text-green-100 hover:bg-green-800 hover:text-white transition"><i class="fi fi-rr-document"></i> จัดการบทความ</a>
                 <a href="add.php" class="admin-nav-link block py-2.5 px-4 rounded-xl text-green-100 hover:bg-green-800 hover:text-white transition"><i class="fi fi-rr-add"></i> เพิ่มสมุนไพรใหม่</a>
+                <a href="admin_add.php" class="admin-nav-link block py-2.5 px-4 rounded-xl text-green-100 hover:bg-green-800 hover:text-white transition">เพิ่มผู้ดูแลระบบ</a>
                 <a href="users.php" class="admin-nav-link block py-2.5 px-4 rounded-xl text-green-100 hover:bg-green-800 hover:text-white transition"><i class="fi fi-rr-users"></i> ข้อมูลผู้ใช้งาน</a>
                 <a href="chats.php" class="admin-nav-link block py-2.5 px-4 rounded-xl text-green-100 hover:bg-green-800 hover:text-white transition relative"><i class="fi fi-rr-comment"></i> ศูนย์ข้อความ (แชท) <?php if($total_admin_unread > 0): ?><span class="absolute right-4 top-3 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center font-bold rounded-full border border-green-800"><?php echo $total_admin_unread; ?></span><?php endif; ?></a>
                 <a href="../index.php" class="admin-nav-link block py-2.5 px-4 rounded-xl text-green-100 hover:bg-green-800 hover:text-white transition mt-6 border-t border-green-800 pt-6"><i class="fi fi-rr-globe"></i> ไปที่หน้าเว็บหลัก</a>

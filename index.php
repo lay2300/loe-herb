@@ -31,29 +31,39 @@ try {
 
     // 1. นับจำนวนข้อมูลทั้งหมด (ตัดตัวที่แนะนำออก)
     $sql_count = "SELECT COUNT(*) FROM herbs 
-            WHERE (thai_name LIKE :s 
-            OR local_name LIKE :s 
-            OR other_names LIKE :s
-            OR properties LIKE :s
-            OR additional_info LIKE :s)";
+            WHERE (thai_name LIKE :search_count_1
+            OR local_name LIKE :search_count_2
+            OR other_names LIKE :search_count_3
+            OR properties LIKE :search_count_4
+            OR additional_info LIKE :search_count_5)";
 
     $stmt_count = $conn->prepare($sql_count);
-    $stmt_count->execute(['s' => $search_param]);
+    $stmt_count->execute([
+        'search_count_1' => $search_param,
+        'search_count_2' => $search_param,
+        'search_count_3' => $search_param,
+        'search_count_4' => $search_param,
+        'search_count_5' => $search_param
+    ]);
     $total_items = $stmt_count->fetchColumn();
     $total_pages = ceil($total_items / $limit);
 
     // 2. ดึงข้อมูลตามหน้า (Pagination) - ตัดตัวแนะนำออก
     $sql = "SELECT * FROM herbs 
-            WHERE (thai_name LIKE :s 
-            OR local_name LIKE :s 
-            OR other_names LIKE :s
-            OR properties LIKE :s
-            OR additional_info LIKE :s)";
+            WHERE (thai_name LIKE :search_1
+            OR local_name LIKE :search_2
+            OR other_names LIKE :search_3
+            OR properties LIKE :search_4
+            OR additional_info LIKE :search_5)";
             
     $sql .= " ORDER BY id DESC LIMIT :limit OFFSET :offset";
     
     $stmt = $conn->prepare($sql);
-    $stmt->bindValue(':s', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_1', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_2', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_3', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_4', $search_param, PDO::PARAM_STR);
+    $stmt->bindValue(':search_5', $search_param, PDO::PARAM_STR);
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -222,7 +232,6 @@ try {
                         
                         <div class="p-6 flex-1 flex flex-col">
                             <h3 class="text-xl font-bold text-gray-800 mb-1 group-hover:text-green-700 transition"><?php echo $row['thai_name']; ?></h3>
-                            <p class="text-sm text-gray-500 font-medium mb-3">ชื่อท้องถิ่น: <span class="text-green-600"><?php echo $row['local_name']; ?></span></p>
                             <p class="text-gray-600 text-sm line-clamp-3 mb-6 flex-1">
                                 <?php echo $row['properties']; ?>
                             </p>

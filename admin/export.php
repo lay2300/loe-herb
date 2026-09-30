@@ -14,10 +14,10 @@ $output = fopen('php://output', 'w');
 fputs($output, (chr(0xEF) . chr(0xBB) . chr(0xBF)));
 
 // เขียนหัวตาราง
-fputcsv($output, ['ID', 'ชื่อภาษาไทย', 'ชื่อท้องถิ่น', 'ชื่อวิทยาศาสตร์', 'ชื่อวงศ์', 'หมวดหมู่', 'สรรพคุณ', 'พื้นที่ที่พบ', 'วันที่บันทึก']);
+fputcsv($output, ['ID', 'ชื่อภาษาไทย', 'ชื่อวิทยาศาสตร์', 'ชื่อวงศ์', 'หมวดหมู่', 'สรรพคุณ', 'พื้นที่ที่พบ', 'วันที่บันทึก']);
 
 // ดึงข้อมูลและเขียนลงไฟล์
-$sql = "SELECT id, thai_name, local_name, sci_name, family_name, category, properties, location_found, created_at FROM herbs ORDER BY id ASC";
+$sql = "SELECT id, thai_name, sci_name, family_name, category, properties, location_found, created_at FROM herbs ORDER BY id ASC";
 $stmt = $conn->query($sql);
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     fputcsv($output, $row);

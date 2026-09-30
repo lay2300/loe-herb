@@ -1,0 +1,6 @@
+.git
+.gitignore
+.env
+.env.*
+config/oauth.local.php
+logs/*.log

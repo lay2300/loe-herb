@@ -27,6 +27,27 @@ try {
     $conn->exec($sql_admins);
     echo "✅ ตาราง admins: พร้อมใช้งาน<br>";
 
+    $admin_columns = [
+        'display_name' => 'VARCHAR(100) NULL',
+        'email' => 'VARCHAR(100) NULL UNIQUE',
+        'phone' => 'VARCHAR(30) NULL',
+        'oauth_provider' => 'VARCHAR(50) NULL',
+        'oauth_uid' => 'VARCHAR(255) NULL',
+        'avatar' => 'VARCHAR(255) NULL'
+    ];
+    foreach ($admin_columns as $column => $definition) {
+        try {
+            $conn->exec("ALTER TABLE admins ADD COLUMN `$column` $definition");
+            echo "✅ เพิ่มคอลัมน์ admins.$column<br>";
+        } catch (PDOException $e) {
+            if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1060) {
+                echo "ℹ️ มีคอลัมน์ admins.$column แล้ว (ข้าม)<br>";
+            } else {
+                echo "❌ เพิ่มคอลัมน์ admins.$column ไม่สำเร็จ<br>";
+            }
+        }
+    }
+
     // 2. ตาราง Herbs (สร้างโครงสร้างหลักก่อน แล้วค่อย Alter เพิ่มคอลัมน์)
     $sql_herbs = "CREATE TABLE IF NOT EXISTS herbs (
         id INT AUTO_INCREMENT PRIMARY KEY,

@@ -16,13 +16,15 @@ try {
     $stmt->execute();
     
     if ($stmt->fetchColumn() == 0) {
-        // 3. เพิ่ม admin เริ่มต้น (รหัส: 1234)
-        // password_hash จะทำการเข้ารหัสรหัสผ่านให้ปลอดภัย (อ่านไม่ออก)
-        $password = password_hash('1234', PASSWORD_DEFAULT);
+        $initial_password = getenv('LOEI_ADMIN_INITIAL_PASSWORD') ?: '';
+        if (strlen($initial_password) < 12) {
+            throw new RuntimeException('ต้องกำหนด LOEI_ADMIN_INITIAL_PASSWORD อย่างน้อย 12 ตัวอักษรก่อนติดตั้ง');
+        }
+        $password = password_hash($initial_password, PASSWORD_DEFAULT);
         $sql = "INSERT INTO admins (username, password) VALUES ('admin', :password)";
         $stmt = $conn->prepare($sql);
         $stmt->execute(['password' => $password]);
-        echo "✅ สร้างตารางและบัญชี Admin สำเร็จ! (User: admin / Pass: 1234)<br>";
+        echo "✅ สร้างตารางและบัญชี Admin สำเร็จ กรุณาลบหรือปิดไฟล์ install_admin.php หลังใช้งาน<br>";
     } else {
         echo "✅ มีบัญชี Admin อยู่แล้ว<br>";
     }

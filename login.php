@@ -1,5 +1,6 @@
 <?php
-session_start();
+require_once 'config/security.php';
+start_secure_session();
 if (isset($_SESSION['user_login'])) {
     header('Location: index.php');
     exit();
@@ -21,30 +22,35 @@ if (isset($_SESSION['oauth_error'])) {
 }
 
 if (isset($_POST['login'])) {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
+    if (!verify_csrf_token($_POST['csrf_token'] ?? null)) {
+        $error = 'คำขอไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
+    } else {
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-    $stmt = $conn->prepare('SELECT * FROM users WHERE username = ? OR email = ?');
-    $stmt->execute([$username, $username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $conn->prepare('SELECT * FROM users WHERE username = ? OR email = ?');
+        $stmt->execute([$username, $username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($user) {
-        if (!empty($user['oauth_provider'])) {
-            $error = 'บัญชีนี้สมัครผ่าน ' . ucfirst($user['oauth_provider']) . ' กรุณาเข้าสู่ระบบด้วย ' . ucfirst($user['oauth_provider']) . ' ค่ะ';
-        } elseif (password_verify($password, $user['password'])) {
-            $update_login = $conn->prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?');
-            $update_login->execute([$user['id']]);
+        if ($user) {
+            if (!empty($user['oauth_provider'])) {
+                $error = 'บัญชีนี้สมัครผ่าน ' . ucfirst($user['oauth_provider']) . ' กรุณาเข้าสู่ระบบด้วย ' . ucfirst($user['oauth_provider']) . ' ค่ะ';
+            } elseif (password_verify($password, $user['password'])) {
+                session_regenerate_id(true);
+                $update_login = $conn->prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?');
+                $update_login->execute([$user['id']]);
 
-            $_SESSION['user_login'] = true;
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            header('Location: index.php');
-            exit();
+                $_SESSION['user_login'] = true;
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                header('Location: index.php');
+                exit();
+            } else {
+                $error = 'ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้องค่ะ';
+            }
         } else {
             $error = 'ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้องค่ะ';
         }
-    } else {
-        $error = 'ชื่อผู้ใช้ หรือรหัสผ่านไม่ถูกต้องค่ะ';
     }
 }
 
@@ -82,6 +88,7 @@ $current_redirect_debug = [
         <?php endif; ?>
 
         <form action="" method="POST" class="space-y-5">
+            <input type="hidden" name="csrf_token" value="<?php echo e(csrf_token()); ?>">
             <div>
                 <input type="text" name="username" required placeholder="ชื่อผู้ใช้งาน หรือ อีเมล" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition bg-gray-50 focus:bg-white">
             </div>
@@ -124,7 +131,7 @@ $current_redirect_debug = [
 
         <div class="mt-6 text-center text-sm text-gray-500 flex flex-col space-y-3">
             <div>ยังไม่มีบัญชี? <a href="register.php" class="text-green-600 hover:text-green-800 font-bold underline">สมัครสมาชิก</a></div>
-            <a href="forgot_password.php" class="text-gray-400 hover:text-gray-600 text-xs">ลืมรหัสผ่าน?</a>
+            <a href="contact.php" class="text-gray-400 hover:text-gray-600 text-xs">ติดต่อผู้ดูแลระบบกรณีลืมรหัสผ่าน</a>
             <a href="index.php" class="text-gray-400 hover:text-gray-600 inline-block mt-2">← กลับไปหน้าเว็บไซต์</a>
         </div>
 
